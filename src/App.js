@@ -23,11 +23,12 @@ function App() {
     setTurn(1);
     setRecentMove(null);
   }
-
   const [turn, setTurn] = useState(1);
   const [board, setBoard] = useState([]);
+  console.log('board', board)
   const [recentMove, setRecentMove] = useState(null);
   const [waiting, setWaiting] = useState(false);
+  const [hinting, setHinting] = useState(false);
   const [difficulty, setDifficulty] = useState(1);
   const waitingRef = useRef(false)
   useEffect(() => initialize(), []);
@@ -46,6 +47,38 @@ function App() {
       waitingRef.current = false
     }
   }, [waiting]);
+
+  useEffect(()=> {
+    const doHint = () => {
+      if (hinting) {
+        const move = minimax(board, 5, 1, -10000, 10000)?.move;
+        if (!isNaN(move)) {
+          const rowToPlace = getRow(move, board);
+          setTimeout(()=> {
+            if (isNaN(move) || move === null) return;
+            console.log('move', move)
+            let tempBoard = deepCopy(board);
+            tempBoard[rowToPlace][move] = turn;
+            setBoard(tempBoard);
+            setTurn(turn === 1 ? 2 : 1);
+            setRecentMove([rowToPlace, move]);
+            setWaiting(true);
+
+            setTimeout(()=>setHinting(true), 50);
+
+          }, 50)
+        }
+
+        setHinting(false);
+
+      }
+
+
+
+    };
+
+    doHint();
+  }, [hinting, board])
 
   const styles = {
     boardStyle: {
@@ -79,7 +112,6 @@ function App() {
   function getRow(column, prevBoard) {
     for (let rowToPlace = prevBoard.length - 1; rowToPlace >= 0; rowToPlace--) {
       if (prevBoard[rowToPlace][column] === 0) {
-        console.log(rowToPlace, column);
         return rowToPlace;
       }
     }
@@ -103,7 +135,7 @@ function App() {
           for (let move = 0; move < 7; move++) {
             const executedMove = executeMove(move, givenSituation, 2);
             if (executedMove) {
-              let m = minimax(executedMove, depth - 1, 1, a, b).score;
+              let m = minimax(executedMove, depth - 1, 1, a, b)?.score;
               if (m < endScore) {
                 endScore = m;
                 b = endScore;
@@ -114,15 +146,15 @@ function App() {
               }
             }
           }
+          console.log(`player ${player} score: ${endScore}`)
           if (executeMove(moveDone,givenSituation,player)) {
             return {score: endScore, move: moveDone};
           }
         }
         if (player === 1) {
           endScore = a;
-          let move = 0;
           let moveDone = 0;
-          for (move = 0; move < 7; move++) {
+          for (let move = 0; move < 7; move++) {
             const executedMove = executeMove(move, givenSituation, player);
             if (executedMove) {
               let mObj = minimax(
@@ -139,10 +171,12 @@ function App() {
                 moveDone = move;
               }
               if (a >= b) {
-                return { score: a, move: move };
+                return { score: a, move: move }; // ?? why not movedone
               }
             }
           }
+          console.log(`player ${player} score: ${endScore}`)
+
           if (executeMove(moveDone,givenSituation,player)) {
             return {score: endScore, move: moveDone};
           }
@@ -155,11 +189,21 @@ function App() {
           return { score: -10000, move: null };
         }
       }
+      let possibleMoves = [];
+
       for (let k = 0 ; k<7;k++){
         if (executeMove(k,givenSituation,player)){
-          return {score:endScore,move: k}
+          possibleMoves.push(k);
         }
       }
+      const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+      const endMove = possibleMoves[randomIndex];
+      if (!possibleMoves.length) {
+        return {score: 0, move: null}
+      }
+      console.log('rando', randomIndex, endMove, possibleMoves, endScore)
+      return {score:endScore,move: endMove}
+
     }
   }
 
@@ -167,6 +211,7 @@ function App() {
     return minimax(currentBoard, difficulty + 3, player, -10000, 10000).move;
   }
   const won = board ? checkBoard(board) : 0;
+
 
   return (
     <div>
@@ -196,7 +241,12 @@ function App() {
             title={"Restart"}
             onClick={() => {
               initialize();
+              console.log('score', scoreBoard([[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[2,0,0,0,0,0,0],[2,2,0,1,1,2,1]]))
             }}
+          />
+          <Button
+            title={"Hint"}
+            onClick={()=>setHinting(true)}
           />
         </div>
       </div>
