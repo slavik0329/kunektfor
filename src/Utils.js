@@ -22,25 +22,21 @@ export function scoreBoard(boardToScore) {
     return -10000;
   }
 
-  // return 0;
-
   let score = 0;
   for (let x = 0; x < boardToScore.length; x++) {
     for (let y = 0; y < boardToScore[0].length; y++) {
       for (let z = -1; z < 2; z++) {
         for (let w = -1; w < 2; w++) {
-          [1,2].forEach(player=> {
+          [1, 2].forEach((player) => {
             if (
-              boardToScore[x]+1 &&
-              boardToScore[x][y]+1 &&
-              boardToScore[x + w]+1 &&
-              boardToScore[x + w][y + z]+1 &&
-              boardToScore[x + 2 * w] +1&&
-              boardToScore[x + 2 * w][y + 2 * z]+1 &&
-              boardToScore[x + 3 * w]+1&&
-              boardToScore[x + 3 * w][y + 3 * z]+1
-
-              &&
+              boardToScore[x] + 1 &&
+              boardToScore[x][y] + 1 &&
+              boardToScore[x + w] + 1 &&
+              boardToScore[x + w][y + z] + 1 &&
+              boardToScore[x + 2 * w] + 1 &&
+              boardToScore[x + 2 * w][y + 2 * z] + 1 &&
+              boardToScore[x + 3 * w] + 1 &&
+              boardToScore[x + 3 * w][y + 3 * z] + 1 &&
               (arraysEqual(
                 [
                   boardToScore[x][y],
@@ -49,26 +45,25 @@ export function scoreBoard(boardToScore) {
                   boardToScore[x + 3 * w][y + 3 * z],
                 ],
                 [0, player, player, player]
-              ) || arraysEqual(
-                [
-                  boardToScore[x][y],
-                  boardToScore[x + w][y + z],
-                  boardToScore[x + 2 * w][y + 2 * z],
-                  boardToScore[x + 3 * w][y + 3 * z],
-                ],
-                [player, 0, player, player]
-              ))
+              ) ||
+                arraysEqual(
+                  [
+                    boardToScore[x][y],
+                    boardToScore[x + w][y + z],
+                    boardToScore[x + 2 * w][y + 2 * z],
+                    boardToScore[x + 3 * w][y + 3 * z],
+                  ],
+                  [player, 0, player, player]
+                ))
             ) {
-              player===1?score++:score--;
+              player === 1 ? score++ : score--;
             }
           });
-
-
         }
       }
     }
   }
-  return score
+  return score;
 }
 
 export function checkBoard(board) {

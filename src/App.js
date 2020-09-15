@@ -23,19 +23,20 @@ function App() {
     setTurn(1);
     setRecentMove(null);
   }
+
   const [turn, setTurn] = useState(1);
   const [board, setBoard] = useState([]);
-  console.log('board', board)
+  console.log("board", board);
   const [recentMove, setRecentMove] = useState(null);
   const [waiting, setWaiting] = useState(false);
   const [hinting, setHinting] = useState(false);
   const [difficulty, setDifficulty] = useState(1);
-  const waitingRef = useRef(false)
+  const waitingRef = useRef(false);
   useEffect(() => initialize(), []);
 
   useEffect(() => {
     if (waiting && board) {
-      console.log('doing work')
+      console.log("doing work");
       const copy = deepCopy(board);
       if (!checkBoard(board)) {
         const c = nextMove(board, 2);
@@ -44,19 +45,19 @@ function App() {
         setRecentMove([getRow(c, board), c]);
       }
       setWaiting(false);
-      waitingRef.current = false
+      waitingRef.current = false;
     }
   }, [waiting]);
 
-  useEffect(()=> {
+  useEffect(() => {
     const doHint = () => {
       if (hinting) {
-        const move = minimax(board, 5, 1, -10000, 10000)?.move;
+        const move = minimax(board, 4, 1, -10000, 10000)?.move;
         if (!isNaN(move)) {
           const rowToPlace = getRow(move, board);
-          setTimeout(()=> {
+          setTimeout(() => {
             if (isNaN(move) || move === null) return;
-            console.log('move', move)
+            console.log("move", move);
             let tempBoard = deepCopy(board);
             tempBoard[rowToPlace][move] = turn;
             setBoard(tempBoard);
@@ -64,21 +65,16 @@ function App() {
             setRecentMove([rowToPlace, move]);
             setWaiting(true);
 
-            setTimeout(()=>setHinting(true), 50);
-
-          }, 50)
+            setTimeout(() => setHinting(true), 50);
+          }, 50);
         }
 
         setHinting(false);
-
       }
-
-
-
     };
 
     doHint();
-  }, [hinting, board])
+  }, [hinting, board]);
 
   const styles = {
     boardStyle: {
@@ -125,9 +121,14 @@ function App() {
     if (givenSituation) {
       const boardScore = scoreBoard(givenSituation);
       let endScore = 0;
+      let possibleMoves = [];
+      let allMoves = [];
+
       if (Math.abs(boardScore) < 10000) {
         if (depth === 0) {
-          return { score: scoreBoard(givenSituation), move: null };
+          let newVar = { score: scoreBoard(givenSituation), move: null };
+          console.log("final!", newVar);
+          return newVar;
         }
         if (player === 2) {
           endScore = b;
@@ -141,14 +142,20 @@ function App() {
                 b = endScore;
                 moveDone = move;
               }
+              if (m === 0) {
+                possibleMoves.push({ move, score: m });
+              }
+
+              allMoves.push({ move, score: m });
+
               if (a >= b) {
                 return { score: b, move: move };
               }
             }
           }
-          console.log(`player ${player} score: ${endScore}`)
-          if (executeMove(moveDone,givenSituation,player)) {
-            return {score: endScore, move: moveDone};
+          console.log(`player ${player} score: ${endScore}`);
+          if (executeMove(moveDone, givenSituation, player)) {
+            return { score: endScore, move: moveDone };
           }
         }
         if (player === 1) {
@@ -170,15 +177,22 @@ function App() {
                 a = endScore;
                 moveDone = move;
               }
+
+              if (m === 0) {
+                possibleMoves.push({ move, score: m });
+              }
+
+              allMoves.push({ move, score: m });
+
               if (a >= b) {
                 return { score: a, move: move }; // ?? why not movedone
               }
             }
           }
-          console.log(`player ${player} score: ${endScore}`)
+          console.log(`player ${player} score: ${endScore}`);
 
-          if (executeMove(moveDone,givenSituation,player)) {
-            return {score: endScore, move: moveDone};
+          if (executeMove(moveDone, givenSituation, player)) {
+            return { score: endScore, move: moveDone };
           }
         }
       } else {
@@ -189,29 +203,26 @@ function App() {
           return { score: -10000, move: null };
         }
       }
-      let possibleMoves = [];
 
-      for (let k = 0 ; k<7;k++){
-        if (executeMove(k,givenSituation,player)){
-          possibleMoves.push(k);
+      const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+      if (!possibleMoves.length) {
+        for (let k = 0; k < 7; k++) {
+          if (executeMove(k, givenSituation, player)) {
+            return { score: 0, move: k };
+          }
         }
       }
-      const randomIndex = Math.floor(Math.random() * possibleMoves.length);
-      const endMove = possibleMoves[randomIndex];
-      if (!possibleMoves.length) {
-        return {score: 0, move: null}
-      }
-      console.log('rando', randomIndex, endMove, possibleMoves, endScore)
-      return {score:endScore,move: endMove}
-
+      const endMove = possibleMoves[randomIndex].move;
+      console.log("rando", allMoves);
+      return { score: endScore, move: endMove };
     }
   }
 
   function nextMove(currentBoard, player) {
     return minimax(currentBoard, difficulty + 3, player, -10000, 10000).move;
   }
-  const won = board ? checkBoard(board) : 0;
 
+  const won = board ? checkBoard(board) : 0;
 
   return (
     <div>
@@ -228,7 +239,7 @@ function App() {
           ))}
         </div>
         <div>
-          {waiting ? (
+          {turn===2 ? (
             <div>Computer is thinking</div>
           ) : (
             <div>
@@ -241,13 +252,20 @@ function App() {
             title={"Restart"}
             onClick={() => {
               initialize();
-              console.log('score', scoreBoard([[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[2,0,0,0,0,0,0],[2,2,0,1,1,2,1]]))
+              console.log(
+                "score",
+                scoreBoard([
+                  [0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0],
+                  [2, 0, 0, 0, 0, 0, 0],
+                  [2, 2, 0, 1, 1, 2, 1],
+                ])
+              );
             }}
           />
-          <Button
-            title={"Hint"}
-            onClick={()=>setHinting(true)}
-          />
+          <Button title={"Hint"} onClick={() => setHinting(true)} />
         </div>
       </div>
 
@@ -261,16 +279,17 @@ function App() {
               value={currentPiece}
               onClick={() => {
                 const rowToPlace = getRow(index, board);
-                console.log('waiting',waitingRef.current)
+                console.log("waiting", waitingRef.current);
                 if (!won && !waitingRef.current) {
-                  waitingRef.current = true
+                  waitingRef.current = true;
 
                   let tempBoard = deepCopy(board);
                   tempBoard[rowToPlace][index] = turn;
                   setBoard(tempBoard);
                   setTurn(turn === 1 ? 2 : 1);
                   setRecentMove([rowToPlace, index]);
-                  setWaiting(true);
+
+                  setTimeout(() => setWaiting(true), 100);
                 }
               }}
               selected={
